@@ -5,15 +5,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-bot_api_token = os.getenv('bot_api_token')
-TELEGRAM_TOKEN = bot_api_token  # Добавьте токен (не делайте так в реальных проектах!)
-CHAT_ID = '534116184'  # Укажите chat_id
+TELEGRAM_TOKEN = os.getenv('bot_api_token')
+CHAT_ID = '534116184'
 
 
 
 
 bot = telegram.Bot(token=TELEGRAM_TOKEN)
-updater = Updater(token=bot_api_token)
+updater = Updater(token=TELEGRAM_TOKEN)
 
 def send_message(message):
     text = 'Привет, я ботик, у меня баги'
