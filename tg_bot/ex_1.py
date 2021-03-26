@@ -1,13 +1,29 @@
 import os
 from dotenv import load_dotenv
-load_dotenv()
+import logging
+from logging.handlers import RotatingFileHandler
 from telegram.ext import Updater, Filters, MessageHandler
+load_dotenv()
+
 
 bot_api_token = os.getenv('bot_api_token')
 updater = Updater(token=bot_api_token)
 
 my_id = 534116184
 
+
+# здесь мы задаем глобальную конфигурацию для всех логеров
+logging.basicConfig(
+    level=logging.DEBUG,
+    filename='logs/bot.log',
+    format='%(asctime)s, %(levelname)s, %(message)s, %(name)s'
+)
+
+# а тут настраиваем логгер для текущего файла .py
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = RotatingFileHandler('my_logger.log', maxBytes=50000000, backupCount=5)
+logger.addHandler(handler)
 def say_hi(bot, update):
     # В ответ на любое сообщение, переданное в аргумент update,
     # будет отправлено сообщение 'Привет, я бот'
