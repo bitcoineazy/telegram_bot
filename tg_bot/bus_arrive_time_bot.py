@@ -1,9 +1,7 @@
-# Will add some cool bus arriving time bot for my route
-# Will do some Starline API for TAXI here
+# Will add user interface to add their own routes later
 import os
 import time
 
-import re
 import requests
 from telegram.ext import Updater, CommandHandler
 from dotenv import load_dotenv
