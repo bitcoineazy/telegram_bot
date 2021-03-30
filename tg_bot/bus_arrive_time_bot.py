@@ -23,11 +23,9 @@ def parse_all_routes_list(all_routes):
     time_get = time.time()
     time_iso8601 = time.localtime(time_get)
     hour = int(time.strftime('%H', time_iso8601))
-    '''pattern = fr'{hour}+'
-    needed_time = re.search(pattern, all_routes.keys())
-    print(needed_time)'''
-    #print(all_routes.keys())
-    needed_idx = [i for i, word in enumerate(all_routes.keys()) if word.startswith(f'{hour if hour > 10 else f"0{hour}"}') or word.startswith(f'{(hour + 1) if (hour+1) > 10 else f"0{hour+1}"}')]
+    needed_idx = [i for i, word in enumerate(all_routes.keys())
+                  if word.startswith(f'{hour if hour > 10 else f"0{hour}"}')
+                  or word.startswith(f'{(hour + 1) if (hour+1) > 10 else f"0{hour+1}"}')]
     list_all_routes = list(all_routes.keys())
     for each_index in needed_idx:
         parsed_routes.append(list_all_routes[each_index])
@@ -55,36 +53,17 @@ def get_arrive_list_poyma_tushin(update, context):
         time.sleep(5)
 
 
-def send_message(message, bot_client):
-    # logging.info(f'Sent message: {message}, to user: {CHAT_ID}')
-    # return bot_client.send_message(CHAT_ID, message)
-    pass
-
-
 def main():
 
     bot_client = Updater(token=f'{TELEGRAM_TOKEN}')
-    current_timestamp = int(time.time())  # начальное значение timestamp
 
     while True:
         try:
-            #all_routes = get_arrive_list_poyma_tushin()
-            #print(all_routes)
             tushka_handler = CommandHandler('tushka', get_arrive_list_poyma_tushin)
             bot_client.dispatcher.add_handler(tushka_handler)
             bot_client.start_polling()
-            '''if new_homework.get('homeworks'):
-                send_message(
-                    parse_homework_status(
-                        new_homework.get('homeworks')[0]),
-                    bot_client)
-            current_timestamp = new_homework.get(
-                'current_date', current_timestamp)  # обновить timestamp
-            time.sleep(300)  # опрашивать раз в 5 минут'''
-            #time.sleep(300)
         except Exception as e:
             error_message = f'Бот столкнулся с ошибкой: {e},'
-            # send_message(error_message, bot_client)
             time.sleep(5)
 
 
