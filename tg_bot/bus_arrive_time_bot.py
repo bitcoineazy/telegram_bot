@@ -49,7 +49,7 @@ def get_arrive_list_poyma_tushin(update, context):
                 {arrive_list_json.get('segments')[i].get('departure'):
                  arrive_list_json.get('segments')[i].get('thread').get('number')})
         parsed_routes = parse_all_routes_list(all_routes)
-        context.bot.send
+        context.bot.send_message(CHAT_ID, '\n'.join(parsed_routes))
     except Exception as e:
         error_message = f'Бот столкнулся с ошибкой: {e}'
         time.sleep(5)
