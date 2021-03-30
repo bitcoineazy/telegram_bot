@@ -19,15 +19,19 @@ STATIONS = [os.getenv('HOME_STATION'), os.getenv('SUB_STATION')]
 
 
 def parse_all_routes_list(all_routes):
+    parsed_routes = []
     time_get = time.time()
-    time_iso8601 = time.gmtime(time_get)
-    hour = int(time.strftime('%H', time_iso8601)) + 3
+    time_iso8601 = time.localtime(time_get)
+    hour = int(time.strftime('%H', time_iso8601))
     '''pattern = fr'{hour}+'
     needed_time = re.search(pattern, all_routes.keys())
     print(needed_time)'''
     #print(all_routes.keys())
-    needed_idx = [i for i, word in enumerate(all_routes.keys()) if word.startswith(f'{hour}') or word.startswith(f'{hour + 1}')]
-    print(needed_idx)
+    needed_idx = [i for i, word in enumerate(all_routes.keys()) if word.startswith(f'{hour if hour > 10 else f"0{hour}"}') or word.startswith(f'{(hour + 1) if (hour+1) > 10 else f"0{hour+1}"}')]
+    list_all_routes = list(all_routes.keys())
+    for each_index in needed_idx:
+        parsed_routes.append(list_all_routes[each_index])
+    return parsed_routes
 
 def get_arrive_list_poyma_tushin(update, context):
     all_routes = {}  # Все маршруты в нотации время отправления : номер маршрута
@@ -44,8 +48,8 @@ def get_arrive_list_poyma_tushin(update, context):
             all_routes.update(
                 {arrive_list_json.get('segments')[i].get('departure'):
                  arrive_list_json.get('segments')[i].get('thread').get('number')})
-        parse_all_routes_list(all_routes)
-
+        parsed_routes = parse_all_routes_list(all_routes)
+        context.bot.send
     except Exception as e:
         error_message = f'Бот столкнулся с ошибкой: {e}'
         time.sleep(5)
