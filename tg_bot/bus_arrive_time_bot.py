@@ -35,11 +35,7 @@ def parse_all_routes_list(all_routes):
 
 def poyma_tushin(update, context):
     print('poyma-tushin')
-    query = update.callback_query
-    route = f'{query.message.reply_markup}'
-
-    #print(update)
-    #print(context)
+    route = f'{update.callback_query.message.reply_markup}'
     all_routes = {}  # Все маршруты в нотации время отправления : номер маршрута
     try:
         if 'Пойма - Тушинская' in route:
@@ -48,20 +44,31 @@ def poyma_tushin(update, context):
                 'from': STATIONS[0],
                 'to': STATIONS[1],
                 'transport_types': 'bus',
-                'limit': 500,
+                'limit': 400,
             })
             arrive_list_json = arrive_list.json()
             for i in range(len(arrive_list_json.get('segments'))):
                 all_routes.update(
                     {arrive_list_json.get('segments')[i].get('departure'):
                          arrive_list_json.get('segments')[i].get('thread').get('number')})
-            #print(update.chosen_inline)
             parsed_routes = parse_all_routes_list(all_routes)
             context.bot.send_message(CHAT_ID, '\n'.join(parsed_routes))
             # update.message.reply_text(text='\n'.join(parsed_routes))
         if 'Тушинская - Пойма' in route:
-            pass
-
+            arrive_list = requests.get(URL, params={
+                'apikey': YANDEX_TOKEN,
+                'from': STATIONS[1],
+                'to': STATIONS[0],
+                'transport_types': 'bus',
+                'limit': 400,
+            })
+            arrive_list_json = arrive_list.json()
+            for i in range(len(arrive_list_json.get('segments'))):
+                all_routes.update(
+                    {arrive_list_json.get('segments')[i].get('departure'):
+                         arrive_list_json.get('segments')[i].get('thread').get('number')})
+            parsed_routes = parse_all_routes_list(all_routes)
+            context.bot.send_message(CHAT_ID, '\n'.join(parsed_routes))
     except Exception as e:
         error_message = f'Бот столкнулся с ошибкой: {e}'
         time.sleep(5)
