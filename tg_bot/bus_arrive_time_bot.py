@@ -60,6 +60,7 @@ def poyma_tushin(update, context):
             context.bot.send_message(CHAT_ID, '\n'.join(parsed_routes))
             # update.message.reply_text(text='\n'.join(parsed_routes))
         if 'Тушинская - Пойма' in route:
+            pass
 
     except Exception as e:
         error_message = f'Бот столкнулся с ошибкой: {e}'
