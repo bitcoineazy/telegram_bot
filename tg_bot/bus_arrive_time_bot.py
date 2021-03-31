@@ -16,7 +16,7 @@ URL = 'https://api.rasp.yandex.net/v3.0/search/'
 HEADERS = {'Authorization': f'OAuth {YANDEX_TOKEN}'}
 STATIONS = [os.getenv('HOME_STATION'), os.getenv('SUB_STATION')]
 FIRST_STATE, SECOND_STATE = range(2)  # Этапы разговора
-POIM_TUSH = 0
+POIM_TUSH, TUSH_POIM = range(2)
 
 
 def parse_all_routes_list(all_routes):
@@ -33,51 +33,40 @@ def parse_all_routes_list(all_routes):
     return parsed_routes[:20]
 
 
-
-def poyma_tushin(update, context):
-    print('poyma-tushin')
-    route = f'{update.callback_query.message.reply_markup}'
-    print(route)
+def tushino_routes(route):
+    """Маршруты для Тушино"""
     all_routes = {}  # Все маршруты в нотации время отправления : номер маршрута
     try:
-        if 'Пойма - Тушинская' in route:
-            arrive_list = requests.get(URL, params={
-                'apikey': YANDEX_TOKEN,
-                'from': STATIONS[0],
-                'to': STATIONS[1],
-                'transport_types': 'bus',
-                'limit': 400,
-            })
-            arrive_list_json = arrive_list.json()
-            for i in range(len(arrive_list_json.get('segments'))):
-                all_routes.update(
-                    {arrive_list_json.get('segments')[i].get('departure'):
-                         arrive_list_json.get('segments')[i].get('thread').get('number')})
-            parsed_routes = parse_all_routes_list(all_routes)
-            context.bot.send_message(CHAT_ID, '\n'.join(parsed_routes))
-            # update.message.reply_text(text='\n'.join(parsed_routes))
-        if 'Тушинская - Пойма' in route:
-            arrive_list = requests.get(URL, params={
-                'apikey': YANDEX_TOKEN,
-                'from': STATIONS[1],
-                'to': STATIONS[0],
-                'transport_types': 'bus',
-                'limit': 400,
-            })
-            arrive_list_json = arrive_list.json()
-            for i in range(len(arrive_list_json.get('segments'))):
-                all_routes.update(
-                    {arrive_list_json.get('segments')[i].get('departure'):
-                         arrive_list_json.get('segments')[i].get('thread').get('number')})
-            parsed_routes = parse_all_routes_list(all_routes)
-            context.bot.send_message(CHAT_ID, '\n'.join(parsed_routes))
+        arrive_list = requests.get(URL, params={
+            'apikey': YANDEX_TOKEN,
+            'from': STATIONS[0] if 'from' in route else STATIONS[1],
+            'to': STATIONS[1] if 'from' in route else STATIONS[0],
+            'transport_types': 'bus',
+            'limit': 400,
+        })
+        arrive_list_json = arrive_list.json()
+        for i in range(len(arrive_list_json.get('segments'))):
+            all_routes.update(
+                {arrive_list_json.get('segments')[i].get('departure'):
+                     arrive_list_json.get('segments')[i].get('thread').get('number')})
+        parsed_routes = parse_all_routes_list(all_routes)
+        return '\n'.join(parsed_routes)
+        # context.bot.send_message(CHAT_ID, '\n'.join(parsed_routes))
+        # update.message.reply_text(text='\n'.join(parsed_routes))
     except Exception as e:
         error_message = f'Бот столкнулся с ошибкой: {e}'
         time.sleep(5)
 
 
+def poyma_tushin(update, context):
+    parsed_routes = tushino_routes('from')
+    context.bot.send_message(CHAT_ID, parsed_routes)
+
+
 def tushin_poyma(update, context):
-    pass
+    parsed_routes = tushino_routes('to')
+    context.bot.send_message(CHAT_ID, parsed_routes)
+
 
 def start(update, context):
     user = update.message.from_user
@@ -85,7 +74,7 @@ def start(update, context):
     keyboard = [
         [
             InlineKeyboardButton('Пойма - Тушинская', callback_data=str(POIM_TUSH)),
-            InlineKeyboardButton('Тушинская - Пойма', callback_data=str(POIM_TUSH))
+            InlineKeyboardButton('Тушинская - Пойма', callback_data=str(TUSH_POIM))
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -130,6 +119,7 @@ def main():
                 states={
                     FIRST_STATE: [
                         CallbackQueryHandler(poyma_tushin, pattern='^' + str(POIM_TUSH) + '$'),
+                        CallbackQueryHandler(tushin_poyma, pattern='^' + str(TUSH_POIM) + '$')
                     ],
                     SECOND_STATE: [
                         CallbackQueryHandler(re_start, pattern='^' + str(POIM_TUSH) + '$'),
