@@ -18,6 +18,7 @@ STATIONS = [os.getenv('HOME_STATION'), os.getenv('SUB_STATION')]
 FIRST_STATE, SECOND_STATE = range(2)  # Этапы разговора
 POIM_TUSH = 0
 
+
 def parse_all_routes_list(all_routes):
     parsed_routes = []
     time_get = time.time()
@@ -25,34 +26,48 @@ def parse_all_routes_list(all_routes):
     hour = int(time.strftime('%H', time_iso8601))
     needed_idx = [i for i, word in enumerate(all_routes.keys())
                   if word.startswith(f'{hour if hour > 10 else f"0{hour}"}')
-                  or word.startswith(f'{(hour + 1) if (hour+1) > 10 else f"0{hour+1}"}')]
+                  or word.startswith(f'{(hour + 1) if (hour + 1) > 10 else f"0{hour + 1}"}')]
     list_all_routes = list(all_routes.keys())
     for each_index in needed_idx:
         parsed_routes.append(list_all_routes[each_index])
-    return parsed_routes[:10]
+    return parsed_routes[:20]
 
-def get_arrive_list_poyma_tushin(update, context):
-    print('123')
+
+def poyma_tushin(update, context):
+    print('poyma-tushin')
+    query = update.callback_query
+    route = f'{query.message.reply_markup}'
+
+    #print(update)
+    #print(context)
     all_routes = {}  # Все маршруты в нотации время отправления : номер маршрута
     try:
-        arrive_list = requests.get(URL, params={
-            'apikey': YANDEX_TOKEN,
-            'from': STATIONS[0],
-            'to': STATIONS[1],
-            'transport_types': 'bus',
-            'limit': 500,
-        })
-        arrive_list_json = arrive_list.json()
-        for i in range(len(arrive_list_json.get('segments'))):
-            all_routes.update(
-                {arrive_list_json.get('segments')[i].get('departure'):
-                 arrive_list_json.get('segments')[i].get('thread').get('number')})
-        parsed_routes = parse_all_routes_list(all_routes)
-        context.bot.send_message(CHAT_ID, '\n'.join(parsed_routes))
-        #update.message.reply_text(text='\n'.join(parsed_routes))
+        if 'Пойма - Тушинская' in route:
+            arrive_list = requests.get(URL, params={
+                'apikey': YANDEX_TOKEN,
+                'from': STATIONS[0],
+                'to': STATIONS[1],
+                'transport_types': 'bus',
+                'limit': 500,
+            })
+            arrive_list_json = arrive_list.json()
+            for i in range(len(arrive_list_json.get('segments'))):
+                all_routes.update(
+                    {arrive_list_json.get('segments')[i].get('departure'):
+                         arrive_list_json.get('segments')[i].get('thread').get('number')})
+            #print(update.chosen_inline)
+            parsed_routes = parse_all_routes_list(all_routes)
+            context.bot.send_message(CHAT_ID, '\n'.join(parsed_routes))
+            # update.message.reply_text(text='\n'.join(parsed_routes))
+        if 'Тушинская - Пойма' in route:
+
     except Exception as e:
         error_message = f'Бот столкнулся с ошибкой: {e}'
         time.sleep(5)
+
+
+def tushin_poyma(update, context):
+    pass
 
 def start(update, context):
     user = update.message.from_user
@@ -100,10 +115,10 @@ def main():
     while True:
         try:
             conv_handler = ConversationHandler(
-                entry_points = [CommandHandler('start', start)],
-                states = {
+                entry_points=[CommandHandler('start', start)],
+                states={
                     FIRST_STATE: [
-                        CallbackQueryHandler(get_arrive_list_poyma_tushin, pattern='^' + str(POIM_TUSH) + '$'),
+                        CallbackQueryHandler(poyma_tushin, pattern='^' + str(POIM_TUSH) + '$'),
                     ],
                     SECOND_STATE: [
                         CallbackQueryHandler(re_start, pattern='^' + str(POIM_TUSH) + '$'),
@@ -113,8 +128,8 @@ def main():
             )
 
             bot_client.dispatcher.add_handler(conv_handler)
-            #tushka_handler = CommandHandler('tushka', get_arrive_list_poyma_tushin)
-            #bot_client.dispatcher.add_handler(tushka_handler)
+            # tushka_handler = CommandHandler('tushka', get_arrive_list_poyma_tushin)
+            # bot_client.dispatcher.add_handler(tushka_handler)
             bot_client.start_polling()
             bot_client.idle()
         except Exception as e:
