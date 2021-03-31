@@ -33,9 +33,11 @@ def parse_all_routes_list(all_routes):
     return parsed_routes[:20]
 
 
+
 def poyma_tushin(update, context):
     print('poyma-tushin')
     route = f'{update.callback_query.message.reply_markup}'
+    print(route)
     all_routes = {}  # Все маршруты в нотации время отправления : номер маршрута
     try:
         if 'Пойма - Тушинская' in route:
@@ -82,7 +84,8 @@ def start(update, context):
     print(f'Пользователь {user.first_name} начал разговор')
     keyboard = [
         [
-            InlineKeyboardButton('Пойма - Тушинская', callback_data=str(POIM_TUSH))
+            InlineKeyboardButton('Пойма - Тушинская', callback_data=str(POIM_TUSH)),
+            InlineKeyboardButton('Тушинская - Пойма', callback_data=str(POIM_TUSH))
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
