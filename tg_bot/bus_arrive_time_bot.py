@@ -3,7 +3,8 @@ import os
 import time
 
 import requests
-from telegram.ext import Updater, CommandHandler
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,7 +15,8 @@ CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 URL = 'https://api.rasp.yandex.net/v3.0/search/'
 HEADERS = {'Authorization': f'OAuth {YANDEX_TOKEN}'}
 STATIONS = [os.getenv('HOME_STATION'), os.getenv('SUB_STATION')]
-
+FIRST_STATE, SECOND_STATE = range(2)  # Этапы разговора
+POIM_TUSH = 0
 
 def parse_all_routes_list(all_routes):
     parsed_routes = []
@@ -27,9 +29,10 @@ def parse_all_routes_list(all_routes):
     list_all_routes = list(all_routes.keys())
     for each_index in needed_idx:
         parsed_routes.append(list_all_routes[each_index])
-    return parsed_routes
+    return parsed_routes[:10]
 
 def get_arrive_list_poyma_tushin(update, context):
+    print('123')
     all_routes = {}  # Все маршруты в нотации время отправления : номер маршрута
     try:
         arrive_list = requests.get(URL, params={
@@ -46,20 +49,74 @@ def get_arrive_list_poyma_tushin(update, context):
                  arrive_list_json.get('segments')[i].get('thread').get('number')})
         parsed_routes = parse_all_routes_list(all_routes)
         context.bot.send_message(CHAT_ID, '\n'.join(parsed_routes))
+        #update.message.reply_text(text='\n'.join(parsed_routes))
     except Exception as e:
         error_message = f'Бот столкнулся с ошибкой: {e}'
         time.sleep(5)
 
+def start(update, context):
+    user = update.message.from_user
+    print(f'Пользователь {user.first_name} начал разговор')
+    keyboard = [
+        [
+            InlineKeyboardButton('Пойма - Тушинская', callback_data=str(POIM_TUSH))
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.message.reply_text(
+        text='Добро пожаловать в моего бота! Выберите маршрут', reply_markup=reply_markup
+    )
+    # Сообщаем ConversationHandler, что сейчас состояние FIRST_STATE
+    return FIRST_STATE
+
+
+def re_start(update, context):
+    # Получаем `CallbackQuery` из обновления `update`
+    query = update.callback_query
+    query.answer()
+    keyboard = [
+        [
+            InlineKeyboardButton('Пойма - Тушинская', callback_data=str(POIM_TUSH))
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    # Отредактируем сообщение, вызвавшее обратный вызов.
+    # Это создает ощущение интерактивного меню.
+    query.edit_message_text(
+        text='Выберите маршрут', reply_markup=reply_markup
+    )
+    return FIRST_STATE
+
+
+def end(update, _):
+    query = update.callback_query
+    query.answer()
+    query.edit_message_text(text="See you next time!")
+    return ConversationHandler.END
+
 
 def main():
-
     bot_client = Updater(token=f'{TELEGRAM_TOKEN}')
-
     while True:
         try:
-            tushka_handler = CommandHandler('tushka', get_arrive_list_poyma_tushin)
-            bot_client.dispatcher.add_handler(tushka_handler)
+            conv_handler = ConversationHandler(
+                entry_points = [CommandHandler('start', start)],
+                states = {
+                    FIRST_STATE: [
+                        CallbackQueryHandler(get_arrive_list_poyma_tushin, pattern='^' + str(POIM_TUSH) + '$'),
+                    ],
+                    SECOND_STATE: [
+                        CallbackQueryHandler(re_start, pattern='^' + str(POIM_TUSH) + '$'),
+                    ],
+                },
+                fallbacks=[CommandHandler('start', start)],
+            )
+
+            bot_client.dispatcher.add_handler(conv_handler)
+            #tushka_handler = CommandHandler('tushka', get_arrive_list_poyma_tushin)
+            #bot_client.dispatcher.add_handler(tushka_handler)
             bot_client.start_polling()
+            bot_client.idle()
         except Exception as e:
             error_message = f'Бот столкнулся с ошибкой: {e},'
             time.sleep(5)
