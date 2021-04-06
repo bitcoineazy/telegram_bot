@@ -96,7 +96,7 @@ def re_start(update, context):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     # Отредактируем сообщение, вызвавшее обратный вызов.
-    # Это создает ощущение интерактивного меню.
+    # Это создает ощущение интерактивного меню
     query.edit_message_text(
         text='Выберите маршрут', reply_markup=reply_markup
     )
