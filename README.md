@@ -1,3 +1,3 @@
 # telegram_bot
 
-My telegram bot, i'll add funcionality later..
+This is the place where I store templates for future telegram bots &#128522;
